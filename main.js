@@ -159,10 +159,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (intersects.length > 0) {
       const intersectedCube = intersects[0].object;
-      const normal = intersects[0].face.normal;
+      const localNormal = intersects[0].face.normal;
+      const worldNormal = getWorldNormal(intersectedCube, localNormal);
+
       // console.log(intersectedCube);
       // console.log(normal)
-      highlightLine(intersectedCube, normal);
+      highlightLine(intersectedCube, worldNormal);
     } else {
       scene.children.forEach(resetHighlight);
     }
@@ -173,8 +175,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const intersectedUserData = { ...intersectedCube.userData };
     // console.log(normal);
     // console.log(intersectedUserData.position);
+    // console.log(intersectedCube.rotationAxis)
     const topPos = cubeSize + gap;
     const { x, y, z } = intersectedUserData.position;
+    
+    
     scene.children.forEach((child) => {
       if (child.userData && child.userData.position) {
         resetHighlight(child);
@@ -270,36 +275,44 @@ function convertToPositioner(coord1, coord2, face) {
 }
 // Function to determine location on a face based on coordinates
 function determineLocation(coord1, coord2, face = "none") {
-console.log("Before edit") 
-console.log(`coord1: ${coord1}, corrd2: ${coord2}, face: ${face}`)
+// console.log("Before edit") 
+// console.log(`coord1: ${coord1}, corrd2: ${coord2}, face: ${face}`)
 
   coord1 = mathingFunction(coord1);
   coord2 = mathingFunction(coord2);
-  console.log(`coord1: ${coord1}, corrd2: ${coord2}, face: ${face}`)
+  // console.log(`coord1: ${coord1}, corrd2: ${coord2}, face: ${face}`)
   const positioner = convertToPositioner(coord1, coord2, face);
   const yAxisPositioner = getCorrectYPositioner(face);
   const yName = yAxisPositioner[positioner.yPos];
   const xAxisPositioner = getCorrectXPositioner(face);
   const xName = xAxisPositioner[positioner.xPos];
-  console.log(`${yName}${xName}`)
+  // console.log(`${yName}${xName}`)
   return `${yName}${xName}`;
 }
+
+function getWorldNormal(intersectedCube, faceNormal) {
+  const worldNormal = faceNormal.clone();
+  worldNormal.applyMatrix3(new THREE.Matrix3().getNormalMatrix(intersectedCube.matrixWorld));
+  return worldNormal;
+}
+
 function rotateFace(faceCubes, axis, angleDelta) {
   // Calculate the center of the face
   let center = new THREE.Vector3(0, 0, 0);
   faceCubes.forEach(cube => {
+    // console.log(cube)
     center.add(cube.position);
   });
   center.divideScalar(faceCubes.length);
-
+//  if(faceCubes[0].userData.faces.includes('front'))console.log(center)
   // Rotate around the center
   const quaternion = new THREE.Quaternion();
   quaternion.setFromAxisAngle(new THREE.Vector3(...(axis === 'x' ? [1, 0, 0] : axis === 'y' ? [0, 1, 0] : [0, 0, 1])), angleDelta);
-
+  // console.log(quaternion)
   faceCubes.forEach(cube => {
     // Translate cube to the rotation origin (center of face)
     cube.position.sub(center);
-
+    console.log(cube.quaternion._x)
     // Apply rotation
     cube.position.applyQuaternion(quaternion);
     cube.rotation.setFromQuaternion(cube.quaternion.multiply(quaternion));
@@ -386,11 +399,17 @@ function animate() {
       cumulativeRotation = 0; // Reset for the next rotation
       faceCubes.forEach((cube) => {
         cube.userData.position = { x: addGap(Math.round(cube.position.x)), y: addGap(Math.round(cube.position.y)), z: addGap(Math.round(cube.position.z)) };
-        console.log(`new positions`, cube.userData.position)
+        // console.log(`new positions`, cube.userData.position)
         let { x, y, z } = cube.userData.position;
+        console.log(x, y, z)
         const x2 = restoreCoordinates(x)
         const y2 = restoreCoordinates(y)
         const z2 = restoreCoordinates(z)
+
+        const newX = cube.position.x;
+        const newY = cube.position.y;
+        const newZ = cube.position.z;
+
         
         // // x = mathingFunction(x)
         // // y = mathingFunction(y)
@@ -422,8 +441,18 @@ function animate() {
           faces.push("front");
           locations.push(determineLocation(x2, y2, "front"));
         }
+        // cube.position.x = x2;
+        // cube.position.y = x2;
+        // cube.position.z = z2;
         cube.userData = { ...cube.userData, locations, faces}
-        console.log(cube.userData);
+        // cube.quaternion.identity()
+        // cube.quaternion.setFromAxisAngle(new THREE.Vector3(...(normalDirection === 'x' ? [1, 0, 0] : normalDirection === 'y' ? [0, 1, 0] : [0, 0, 1])), 0);
+        cube.position.set(newX, newY, newZ);
+        // setTimeout(() => {
+
+        // }, 0)
+        // cube.position = new THREE.Vector3(newX, newY, newZ)
+        // console.log(cube.userData);
       })
 
       // console.log("Position of first cube:", cube.position);
