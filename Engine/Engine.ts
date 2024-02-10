@@ -1,0 +1,55 @@
+import * as THREE from "three";
+import Sizes from "./Utils/Sizes";
+import { Camera } from "./Camera";
+import Renderer from "./Renderer";
+import Time from "./Utils/Time";
+let instance: Engine | null = null;
+
+export default class Engine {
+  scene!: THREE.Scene;
+  camera!: Camera;
+  size!: Sizes;
+  renderer!: Renderer;
+  time!: Time;
+  constructor(_slot?: Element | null) {
+    if (instance) {
+      return instance;
+    }
+
+    instance = this;
+
+    this.size = new Sizes();
+
+    this.time = new Time();
+
+    this.renderer = new Renderer();
+
+    if (!_slot) return;
+
+    _slot.appendChild(this.renderer.instance.domElement);
+
+    this.scene = new THREE.Scene();
+
+    this.scene.background = new THREE.Color('white')
+    
+    this.camera = new Camera();
+
+    this.resize = this.resize.bind(this);
+
+    this.update = this.update.bind(this);
+
+    this.size.on("resize", this.resize);
+
+    this.time.on("tick", this.update);
+  }
+
+  resize() {
+    this.camera.resize();
+    this.renderer.resize();
+  }
+
+  update() {
+    this.renderer.update();
+    this.camera.update();
+  }
+}
