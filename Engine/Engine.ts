@@ -3,6 +3,9 @@ import Sizes from "./Utils/Sizes";
 import { Camera } from "./Camera";
 import Renderer from "./Renderer";
 import Time from "./Utils/Time";
+import sources from './sources';
+import Resources from './Utils/Resources';
+import World from './World/World';
 let instance: Engine | null = null;
 
 export default class Engine {
@@ -11,6 +14,8 @@ export default class Engine {
   size!: Sizes;
   renderer!: Renderer;
   time!: Time;
+  resources!: Resources;
+  world!: World;
   constructor(_slot?: Element | null) {
     if (instance) {
       return instance;
@@ -33,6 +38,10 @@ export default class Engine {
     this.scene.background = new THREE.Color('white')
     
     this.camera = new Camera();
+
+    this.resources = new Resources(sources);
+
+    this.world = new World();
 
     this.resize = this.resize.bind(this);
 
