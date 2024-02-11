@@ -34,9 +34,7 @@ export default class Cube {
 
   setCenterPiece() {
     this.model.traverse((child: any) => {
-      // if (child.isMesh) console.log(child)
       if (child.name.toLowerCase() === "cube013") {
-        console.log(child.position);
         const blockPiece = child;
         this.centerPiecePosition = {
           x: child.position.x,
@@ -47,7 +45,6 @@ export default class Cube {
 
         // The bounding box will give you the min and max coordinates of the geometry
         let bbox = blockPiece.geometry.boundingBox;
-        console.log(bbox);
         // Calculate dimensions
         let width = bbox.max.x - bbox.min.x;
         let height = bbox.max.y - bbox.min.y;

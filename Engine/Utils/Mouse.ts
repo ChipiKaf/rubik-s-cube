@@ -37,7 +37,6 @@ export default class Mouse extends EventEmitter {
             const x = event.clientX / this._size.width * 2 - 1 // Will go from -1 to 1
             const y = -(event.clientY / this._size.height) * 2 + 1
             this.position.set(x, y);
-            // console.log(`x position: ${this.x} y position: ${this.y}`);
         })
     }
 
