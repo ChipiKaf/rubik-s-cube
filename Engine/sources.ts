@@ -7,5 +7,5 @@ export type Source = {
 export default [{
     name: 'rubiksCubeModel',
     type: 'gltfModel',
-    path: 'models/rubiks-cube.glb',
+    path: 'models/rubiks-cube-3.glb',
 }] as Source[]

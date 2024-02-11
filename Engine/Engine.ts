@@ -6,6 +6,7 @@ import Time from "./Utils/Time";
 import sources from './sources';
 import Resources from './Utils/Resources';
 import World from './World/World';
+import Mouse from './Utils/Mouse'
 let instance: Engine | null = null;
 
 export default class Engine {
@@ -16,6 +17,7 @@ export default class Engine {
   time!: Time;
   resources!: Resources;
   world!: World;
+  mouse!: Mouse;
   constructor(_slot?: Element | null) {
     if (instance) {
       return instance;
@@ -40,8 +42,10 @@ export default class Engine {
     this.camera = new Camera();
 
     this.resources = new Resources(sources);
-
+    
     this.world = new World();
+    
+    this.mouse = new Mouse()
 
     this.resize = this.resize.bind(this);
 
@@ -60,5 +64,6 @@ export default class Engine {
   update() {
     this.renderer.update();
     this.camera.update();
+    this.mouse.update();
   }
 }
