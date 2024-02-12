@@ -2,17 +2,17 @@ import { AmbientLight, Scene } from "three";
 import Engine from "../Engine";
 
 export default class Environment {
-    engine: Engine;
-    scene: Scene;
+    private _engine: Engine;
+    private _scene: Scene;
     ambientLight!: AmbientLight;
     constructor() {
-        this.engine = new Engine();
-        this.scene = this.engine.scene;
+        this._engine = new Engine();
+        this._scene = this._engine.scene;
         this.setAmbientLight()
     }
 
     setAmbientLight() {
         this.ambientLight = new AmbientLight('white', 1)
-        this.scene.add(this.ambientLight);
+        this._scene.add(this.ambientLight);
     }
 }

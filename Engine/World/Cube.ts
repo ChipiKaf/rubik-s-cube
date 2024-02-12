@@ -3,33 +3,31 @@ import Engine from "../Engine";
 import Resources from "../Utils/Resources";
 import Time from "../Utils/Time";
 import { GLTF } from "three/examples/jsm/loaders/GLTFLoader";
-import EventEmitter from "../Helpers/Events/events";
 
 export type Dimensions = { width: number; height: number; depth: number };
 export type Position = { x: number; y: number; z: number };
 export default class Cube {
-  engine: Engine;
-  scene: Scene;
-  resources: Resources;
-  time: Time;
-  resource: GLTF;
+  private _engine: Engine;
+  private _scene: Scene;
+  private _resources: Resources;
+  private _time: Time;
+  private _resource: GLTF;
   model!: Group<Object3DEventMap> | Mesh | Object3D;
   dimensions!: Dimensions;
   centerPiecePosition!: Position;
 
   constructor() {
-    this.engine = new Engine();
-    this.scene = this.engine.scene;
-    this.resources = this.engine.resources;
-    this.time = this.engine.time;
-    this.resource = this.resources.items["rubiksCubeModel"] as GLTF;
+    this._engine = new Engine();
+    this._scene = this._engine.scene;
+    this._resources = this._engine.resources;
+    this._time = this._engine.time;
+    this._resource = this._resources.items["rubiksCubeModel"] as GLTF;
     this.setModel();
     this.setCenterPiece();
   }
 
   setModel() {
-    this.model = this.resource.scene;
-    this.scene.add(this.model);
+    this.model = this._resource.scene;
   }
 
   setCenterPiece() {

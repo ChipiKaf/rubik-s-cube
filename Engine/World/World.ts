@@ -1,21 +1,22 @@
-import { Scene } from 'three';
-import Engine from '../Engine';
-import Resources from '../Utils/Resources';
-import Environment from './Environment';
-import Cube from './Cube';
+import { Scene } from "three";
+import Engine from "../Engine";
+import Resources from "../Utils/Resources";
+import Environment from "./Environment";
+import Cube from "./Cube";
 export default class World {
-    engine: Engine;
-    scene: Scene;
-    resources: Resources
-    cube!: Cube;
-    environment!: Environment;
-    constructor() {
-        this.engine = new Engine();
-        this.resources = this.engine.resources;
-        this.scene = this.engine.scene;
-        this.resources.on('ready', () => {
-            this.environment = new Environment();
-            this.cube = new Cube();
-        })
-    }
+  private _engine: Engine;
+  private _scene: Scene;
+  private _resources: Resources;
+  public cube!: Cube;
+  private _environment!: Environment;
+  constructor() {
+    this._engine = new Engine();
+    this._resources = this._engine.resources;
+    this._scene = this._engine.scene;
+    this._resources.on("ready", () => {
+      this._environment = new Environment();
+      this.cube = new Cube();
+      this._scene.add(this.cube.model)
+    });
+  }
 }
