@@ -4,7 +4,7 @@ import Sizes from "./Sizes";
 import Engine from "../Engine";
 import { Camera } from "../Camera";
 import Resources from "./Resources";
-import Cube from "../World/Cube";
+import Cube, { Position } from "../World/Cube";
 import Time from "./Time";
 import { gsap } from "gsap";
 
@@ -30,7 +30,8 @@ export default class Mouse extends EventEmitter {
   private _firstEnter: number | null = null;
   private debounceTimer: number | null = null;
   private _changeFace: boolean | undefined = false;
-  private _rotated = false;
+  private _isRotating = false;
+  private _rotationInProgress = false;
   faceAndRotation: FaceRotation[] = [];
   currentFace!: FaceRotation | undefined;
   currentNormal!: "x" | "y" | "z" | undefined;
@@ -65,6 +66,9 @@ export default class Mouse extends EventEmitter {
       const y = -(event.clientY / this._size.height) * 2 + 1;
       this.position.set(x, y);
     });
+    window.addEventListener("mousedown", (event) => {
+      if (this._currentFaceObjects.length > 0) this._isRotating = true;
+    });
   }
 
   setRaycaster() {
@@ -72,10 +76,19 @@ export default class Mouse extends EventEmitter {
   }
 
   update() {
+    if (this._isRotating && !this._rotationInProgress) {
+      this.rotateCubeAroundPoint();
+    }
+    if (this._rotationInProgress) return;
+
     this.raycaster.setFromCamera(this.position, this._camera.instance);
+
     const intersects = this.raycaster.intersectObjects(this._objects);
+
     this.currentFace = undefined;
+
     // this.currentNormal = undefined;
+
     if (intersects.length > 0) {
       let worldPos = new Vector3();
       intersects[0].object.getWorldPosition(worldPos);
@@ -90,6 +103,7 @@ export default class Mouse extends EventEmitter {
       if (!this._changeFace)
         this._changeFace =
           this.currentNormal && this.currentNormal !== axisNormal;
+
       this.currentNormal = axisNormal;
       const faceObject = this.faceAndRotation.find(
         (val) => val[axisNormal]?.toFixed(2) === worldPos[axisNormal].toFixed(2)
@@ -109,9 +123,8 @@ export default class Mouse extends EventEmitter {
           });
         });
         this._firstEnter = null;
-        this._currentFaceObjects = [];
+        if (!this._isRotating) this._currentFaceObjects = [];
       }
-      this._rotated = false;
     }
   }
 
@@ -149,6 +162,9 @@ export default class Mouse extends EventEmitter {
             x: obj.position.x,
             y: obj.position.y,
             z: obj.position.z,
+            xRot: obj.rotation.x,
+            yRot: obj.rotation.y,
+            zRot: obj.rotation.z
           },
         };
       });
@@ -165,8 +181,6 @@ export default class Mouse extends EventEmitter {
       if (changeFace) {
         this._changeFace = false;
       }
-      if (!this._rotated) this.rotateCubeAroundPoint();
-      this._rotated = false;
     }
 
     this._lastCheckedTime = this._time.elapsed;
@@ -188,10 +202,12 @@ export default class Mouse extends EventEmitter {
       angle: targetAngleRadians,
       duration: 1,
       onUpdate: () => {
+        this._rotationInProgress = true;
         this._currentFaceObjects.forEach((cube) => {
+          const positionalAxes = this._getPositionalAxes()
           // Assuming originalPosition is accurately stored
-          let relativeX = cube.originalPosition.x - center.x;
-          let relativeY = cube.originalPosition.y - center.y;
+          let relativeX = cube.originalPosition[positionalAxes[0]] - center[positionalAxes[0]];
+          let relativeY = cube.originalPosition[positionalAxes[1]] - center[positionalAxes[1]];
 
           // Calculate new position based on the current angle
           let newX =
@@ -202,16 +218,65 @@ export default class Mouse extends EventEmitter {
             relativeY * Math.cos(rotationParams.angle);
 
           // Update cube's position without altering its rotation
-          cube.position.set(newX + center.x, newY + center.y, cube.position.z);
+          const rotationalAxis = this._getRotationalAxis()
+
+          cube.rotation[rotationalAxis[0]] = cube.originalPosition[rotationalAxis[1]] + rotationParams.angle; // For a rotation around the Y-axis, for example
+          
+          cube.position.set(positionalAxes[0] === 'x' ? newX + center.x : positionalAxes[1] === 'x' ? newY + center.y : cube.position.x, 
+          
+          positionalAxes[0] === 'y' ? newX + center.x : positionalAxes[1] === 'y' ? newY + center.y : cube.position.y, 
+          
+          positionalAxes[0] === 'z' ? newX + center.x : positionalAxes[1] === 'z' ? newY + center.y : cube.position.z);
         });
       },
       onComplete: () => {
-        console.log("Rotation complete");
+        this._currentFaceObjects = this._currentFaceObjects.map((obj) => {
+          return {
+            ...obj,
+            originalPosition: {
+              x: obj.position.x,
+              y: obj.position.y,
+              z: obj.position.z,
+              xRot: obj.rotation.x,
+              yRot: obj.rotation.y,
+              zRot: obj.rotation.z
+            },
+          };
+        });
+        this._isRotating = false;
+        this._rotationInProgress = false;
+        if (!this._firstEnter && this._currentFaceObjects.length > 0)
+          this._currentFaceObjects = [];
         // Reset or update state as necessary
       },
     });
   }
 
+  private _getPositionalAxes(): ('x' | 'y' | 'z')[] {
+    if (this.currentFace?.face === 'front' || this.currentFace?.face === 'back'){
+      return ['x', 'y']
+    } else if (this.currentFace?.face === 'left' || this.currentFace?.face === 'right'){
+      return ['y', 'z']
+    } else if (this.currentFace?.face === 'top' || this.currentFace?.face === 'bottom'){
+      return ['x', 'z']
+    }
+    else{
+      return ['x', 'y', 'z']
+    }
+  }
+
+  private _getRotationalAxis(): ['x' | 'y' | 'z', 'xRot' | 'yRot' | 'zRot'] {
+    if (this.currentFace?.face === 'front' || this.currentFace?.face === 'back'){
+      return ['z', 'zRot']
+    } else if (this.currentFace?.face === 'left' || this.currentFace?.face === 'right'){
+      return ['x', 'xRot']
+    } else if (this.currentFace?.face === 'top' || this.currentFace?.face === 'bottom'){
+      return ['y', 'yRot']
+    }
+    else{
+      return ['z', 'zRot']
+    }
+  }
   determineAxisNormal(normal: Vector3) {
     // Normalize the vector to ensure it has unit length
     normal.normalize();
