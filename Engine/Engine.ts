@@ -51,8 +51,6 @@ export default class Engine {
     
     this.AxesHelper = new AxesHelper()
     
-
-
     this.resize = this.resize.bind(this);
 
     this.update = this.update.bind(this);
